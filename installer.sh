@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Installeur d'un serveur de production ecluse.
 #
-# Généré par `make installeur` depuis ecluse@bbb2623e46a5224237d261faaa95990d9aadd090 — ne pas modifier ici :
+# Généré par `make installeur` depuis ecluse@cac1faaf8869c67530777090aa476d01ac1776bd — ne pas modifier ici :
 # toute correction se fait dans le dépôt ecluse, puis se régénère.
 #
 # Usage (Ubuntu Server 24.04 neuve, en root) :
@@ -25,9 +25,9 @@
 
 set -euo pipefail
 
-COMMIT="bbb2623e46a5224237d261faaa95990d9aadd090"
+COMMIT="cac1faaf8869c67530777090aa476d01ac1776bd"
 NOM=""
-VERSION=""
+ECLUSE_VERSION=""
 REGISTRE="${ECLUSE_REGISTRE:-ecluse-registry.my-cosi.info}"
 DOSSIER=/opt/ecluse
 COMPTE=ecluse
@@ -36,13 +36,13 @@ usage() { echo "usage : sudo bash $0 --nom <serveur> --version <AAAA.MM.JJ-commi
 while [ $# -gt 0 ]; do
   case "$1" in
     --nom) NOM="${2:-}"; shift 2 ;;
-    --version) VERSION="${2:-}"; shift 2 ;;
+    --version) ECLUSE_VERSION="${2:-}"; shift 2 ;;
     *) usage ;;
   esac
 done
-[ -n "$NOM" ] && [ -n "$VERSION" ] || usage
+[ -n "$NOM" ] && [ -n "$ECLUSE_VERSION" ] || usage
 [[ "$NOM" =~ ^[a-z0-9][a-z0-9-]{0,40}$ ]] || { echo "nom de serveur invalide : $NOM" >&2; exit 2; }
-[[ "$VERSION" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[0-9a-f]{7}$ ]] || { echo "version invalide : $VERSION" >&2; exit 2; }
+[[ "$ECLUSE_VERSION" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[0-9a-f]{7}$ ]] || { echo "version invalide : $ECLUSE_VERSION" >&2; exit 2; }
 [ "$(id -u)" -eq 0 ] || { echo "à lancer avec sudo : la préparation de la machine l'exige" >&2; exit 2; }
 SHA_INSTALLEUR="$(sha256sum "$0" | cut -d' ' -f1)"
 
@@ -50,8 +50,20 @@ etape() { printf '\n\033[1m── %s\033[0m\n' "$*"; }
 
 # ── 1. La machine (docs/12 § 1 bis) ─────────────────────────────────────────
 etape "1. Préparation de la machine"
-. /etc/os-release
-[ "${ID:-}" = ubuntu ] || { echo "Ubuntu Server attendu (trouvé : ${ID:-?})" >&2; exit 1; }
+# **Lu dans un sous-shell, clé par clé** : `/etc/os-release` définit VERSION,
+# NAME, ID… Sourcé ici, il remplaçait la version demandée par
+# « 24.04.3 LTS (Noble Numbat) » (premier essai sur essai1, 26/10).
+OS_RELEASE=/etc/os-release
+os_release() {
+  ( . "$OS_RELEASE"
+    case "$1" in
+      ID) printf '%s' "${ID:-}" ;;
+      VERSION_CODENAME) printf '%s' "${VERSION_CODENAME:-}" ;;
+    esac )
+}
+OS_ID="$(os_release ID)"
+OS_CODENAME="$(os_release VERSION_CODENAME)"
+[ "$OS_ID" = ubuntu ] || { echo "Ubuntu Server attendu (trouvé : ${OS_ID:-?})" >&2; exit 1; }
 
 # `mkpasswd` (paquet whois) calcule l'empreinte de l'identité : aucune image
 # n'est tirée avant l'acceptation par le registre.
@@ -93,7 +105,7 @@ if ! docker compose version >/dev/null 2>&1; then
   install -m 0755 -d /etc/apt/keyrings
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
   chmod a+r /etc/apt/keyrings/docker.asc
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${VERSION_CODENAME} stable" \
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${OS_CODENAME} stable" \
     > /etc/apt/sources.list.d/docker.list
   apt-get update -q
   apt-get install -y -q docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
@@ -125,7 +137,7 @@ sudo -u "$COMPTE" -H \
   ECLUSE_REGISTRE="$REGISTRE" \
   ECLUSE_DOSSIER="$DOSSIER" \
   ECLUSE_INSTALLEUR="ecluse-installeur, ecluse@${COMMIT:0:7}, sha256 ${SHA_INSTALLEUR}" \
-  python3 -m tools.maj.amorce --nom "$NOM" --version "$VERSION"
+  python3 -m tools.maj.amorce --nom "$NOM" --version "$ECLUSE_VERSION"
 
 # ── 6. L'agent de mise à jour, en root : son unité systemd ─────────────────
 # Depuis la configuration installée et signée, pas depuis l'amorce. Une
