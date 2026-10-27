@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Installeur d'un serveur de production ecluse.
 #
-# Généré par `make installeur` depuis ecluse@996f97e24b131813f644b898b220f09da4af2bc1 — ne pas modifier ici :
+# Généré par `make installeur` depuis ecluse@bb31a60e2a89392c8518d2b817d7d2bb36262cb2 — ne pas modifier ici :
 # toute correction se fait dans le dépôt ecluse, puis se régénère.
 #
 # Usage (Ubuntu Server 24.04 neuve, en root) :
@@ -29,7 +29,7 @@
 
 set -euo pipefail
 
-COMMIT="996f97e24b131813f644b898b220f09da4af2bc1"
+COMMIT="bb31a60e2a89392c8518d2b817d7d2bb36262cb2"
 NOM=""
 ECLUSE_VERSION=""
 REGISTRE="${ECLUSE_REGISTRE:-ecluse-registry.my-cosi.info}"
@@ -134,6 +134,9 @@ if ! id "$COMPTE" >/dev/null 2>&1; then
 fi
 usermod -aG docker "$COMPTE"
 install -d -o "$COMPTE" -g "$COMPTE" -m 0750 "$DOSSIER"
+# Le dossier où root seul pose ce que l'agent lit sans pouvoir l'écrire —
+# le fichier d'échec volontaire (retour arrière éprouvé en production).
+install -d -o root -g root -m 0755 /etc/ecluse
 # Ce que `compose.yaml` monte sans que la configuration publiée le porte :
 # absent au premier `up`, Docker le crée en root, et l'agent ne peut plus y
 # écrire — essai1, 27/10 : la mise à jour vers 0.3.2 refusée deux fois sur
