@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Installeur d'un serveur de production ecluse.
 #
-# Généré par `make installeur` depuis ecluse@4af60c8e1e7557ad968ef75033291f3b0cbb15b9 — ne pas modifier ici :
+# Généré par `make installeur` depuis ecluse@222cfb06469ab1f33360a0e46ab1a62a2ff5cfad — ne pas modifier ici :
 # toute correction se fait dans le dépôt ecluse, puis se régénère.
 #
 # Usage (Ubuntu Server 24.04 neuve, en root) :
@@ -29,7 +29,7 @@
 
 set -euo pipefail
 
-COMMIT="4af60c8e1e7557ad968ef75033291f3b0cbb15b9"
+COMMIT="222cfb06469ab1f33360a0e46ab1a62a2ff5cfad"
 NOM=""
 ECLUSE_VERSION=""
 REGISTRE="${ECLUSE_REGISTRE:-ecluse-registry.my-cosi.info}"
@@ -122,11 +122,13 @@ if ! docker compose version >/dev/null 2>&1; then
 fi
 echo "Docker $(docker version --format '{{.Server.Version}}'), $(docker compose version --short)"
 
-if swapon --show=NAME --noheadings | grep -q .; then
-  echo 'vm.swappiness=1' > /etc/sysctl.d/99-ecluse.conf
-  sysctl -q --system
-  echo "swap présent : vm.swappiness=1 (CLAUDE.md § 8.4)"
-fi
+# Sur tout serveur, avec ou sans swap (drubio, 28/10 : une seule règle) : un
+# swap ajouté plus tard par l'hébergeur ne doit pas trouver `clamd` et les
+# autres prêts à partir sur disque (CLAUDE.md § 8.4).
+SYSCTL_ECLUSE=/etc/sysctl.d/99-ecluse.conf
+echo 'vm.swappiness=1' > "$SYSCTL_ECLUSE"
+sysctl -q -p "$SYSCTL_ECLUSE"
+echo "vm.swappiness=1 (CLAUDE.md § 8.4)"
 timedatectl set-timezone UTC
 
 if ! id "$COMPTE" >/dev/null 2>&1; then
