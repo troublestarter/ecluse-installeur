@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Installeur d'un serveur de production ecluse.
 #
-# Généré par `make installeur` depuis ecluse@28548449f017b451cc60df63d94c6ff8de587693 — ne pas modifier ici :
+# Généré par `make installeur` depuis ecluse@af85d2c01cfd4218df3654a9cc164c9c126ad72e — ne pas modifier ici :
 # toute correction se fait dans le dépôt ecluse, puis se régénère.
 #
 # Usage (Ubuntu Server 24.04 neuve, en root) :
@@ -29,7 +29,7 @@
 
 set -euo pipefail
 
-COMMIT="28548449f017b451cc60df63d94c6ff8de587693"
+COMMIT="af85d2c01cfd4218df3654a9cc164c9c126ad72e"
 NOM=""
 ECLUSE_VERSION=""
 REGISTRE="${ECLUSE_REGISTRE:-ecluse-registry.my-cosi.info}"
